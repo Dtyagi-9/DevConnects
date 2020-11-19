@@ -10,12 +10,12 @@ const config = require('config')
 //@desc     Register User
 //@access   Public
 router.post('/'
-// ,[
-//     //check middleware
-//     check('name','Name is required').not().isEmpty(),
-//     check('email','Please include a valid email').isEmail(),
-//     check('password','Please enter a Password of min Length 6').isLength({min:6})
-// ]
+,[
+    //check middleware
+    check('name','Name is required').not().isEmpty(),
+    check('email','Please include a valid email').isEmail(),
+    check('password','Please enter a Password of min Length 6').isLength({min:6})
+]
     ,async (req,res)=>{
     const errors = validationResult(req);
     //if there are errors
