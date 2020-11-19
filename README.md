@@ -1,2 +1,2 @@
 # DevConnects
-Dev's(Me) initiative to bring closer the Dev community 
+Dev's initiative to bring closer the Dev community 
