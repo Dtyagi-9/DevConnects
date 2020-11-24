@@ -137,16 +137,18 @@ router.get('/user/:user_id',async (req,res)=>{
 //@desc     Delete user's profile,user and posts 
 //@access   Private
 
-router.get('/',async (req,res)=>{
+router.delete('/',auth,async (req,res)=>{
     try{
         //Remove Profile
+        
         await Profile.findOneAndRemove({user:req.user.id});
 
-        //Remove the posts by this user
+        //@todo -   Remove the posts by this user
 
         //Remove user
+        
+        await User.findOneAndRemove({ _id:req.user.id});
 
-        await User.findOneAndRemove({_id:req.user.id});
         res.status(200).json({msg:"User Removed Successfully .."}); 
     }
     catch(e){
@@ -155,5 +157,55 @@ router.get('/',async (req,res)=>{
     }
 });
 
+//@route    PUT api/profile/experience
+//@desc     Add Profile's Experience 
+//@access   Private
+
+router.put('/experience',[auth,[
+    check('title','Title is required').not().isEmpty(),
+    check('company','Company is required').not().isEmpty(),
+    check('from','From Date is required').not().isEmpty()
+]],async (req,res)=> {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return res.status(400).json({errors:errors.array()});   
+    }
+
+    const {
+        title,
+        company,
+        from,
+        location,
+        to,
+        current,
+        description
+    } = req.body;
+
+    const newExp = {
+        title,
+        company,
+        location,
+        from,
+        to,
+        current,
+        description
+    }
+
+
+    try {
+        const profile = await Profile.findOne({user:req.user.id});
+        //pushing the entire array
+        //profile.experience = []
+        profile.experience.unshift(newExp);
+
+        await profile.save();
+        res.json(profile);
+
+    }
+    catch(e) {
+        console.log(e.message);
+        return res.status(500).send("Server error");
+    }
+});
 
 module.exports = router;
