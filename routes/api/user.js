@@ -6,17 +6,18 @@ const gravatar = require('gravatar');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 const config = require('config')
+
+
+
 //@route    POST api/users
 //@desc     Register User
 //@access   Public
-router.post('/'
-,[
+router.post('/',[
     //check middleware
     check('name','Name is required').not().isEmpty(),
     check('email','Please include a valid email').isEmail(),
     check('password','Please enter a Password of min Length 6').isLength({min:6})
-]
-    ,async (req,res)=>{
+    ],async (req,res)=>{
     const errors = validationResult(req);
     //if there are errors
     if(!errors.isEmpty()) {
