@@ -1,0 +1,58 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+env:
+  AWS_REGION_NAME: "ap-south-1"
+  DEPLOY_PACKAGE_NAME: "insert name"
+  S3_BUCKET_NAME: "INSERT BUCKET NAME HERE"
+  EBS_APPLICATION_NAME: "insert application name"
+  EBS_ENVIRONMENT_NAME: ""
+on:
+  push:
+    branches: [ staging ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone our repo
+        uses: actions/checkout@v2
+        
+      - name: ZIP deployment package
+        run: zip -r ${{env.DEPLOY_PACKAGE_NAME}} ./ -x *.git*
+      
+      - name: Configuring AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{env.AWS_REGION_NAME}}
+      - name: Copy folder to S3 bucket
+        run: aws s3 cp ${{env.DEPLOY_PACKAGE_NAME}} s3://${{env.S3_BUCKET_NAME}}/ 
+  cd:
+    runs-on: ubuntu-latest
+    needs: [ci]
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x, 15.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - name: Configuring AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{env.AWS_REGION_NAME}}
+      - name: Creating EBS version
+        run: |
+          aws elasticbeanstalk create-application-version \
+          --application-name ${{env.EBS_APPLICATION_NAME}} \
+          --source-bundle S3Bucket="${{env.S3_BUCKET_NAME}}",S3Key="${{env.DEPLOY_PACKAGE_NAME}}" \
+          --version-lable "Version-${{ github.sha }}" --description "Commiting ${{ github.sha }}" 
+      - name: Deployment of EBS version
+        run: aws elasticbeanstalk update-environment \
+             --environment-name ${{env.EBS_ENVIRONMENT_NAME}} \
+             --version-label "Version-${{github.sha}}"    
+      
